@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Where are we heading?</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    .card { background: #1e1e1e; border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center; }
+    h2 { margin-top: 0; font-size: 22px; color: #f3f3f3; }
+    p { color: #aaa; font-size: 14px; margin-bottom: 20px; }
+    input { width: 100%; padding: 16px; border: 1px solid #333; border-radius: 10px; background: #2a2a2a; color: #fff; font-size: 16px; box-sizing: border-box; margin-bottom: 16px; outline: none; }
+    input:focus { border-color: #007aff; }
+    button { width: 100%; padding: 16px; border: none; border-radius: 10px; background: #007aff; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    button:active { background: #0056b3; }
+    .status { margin-top: 16px; font-size: 14px; color: #34c759; display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Enter Destination</h2>
+  <p>Type your drop-off address or place name to send it directly to the driver's satnav.</p>
+  
+  <input type="text" id="addressInput" placeholder="e.g. Heathrow Terminal 5 or Postcode" required />
+  <button onclick="sendToDriver()">Send to Driver Satnav</button>
+  
+  <div id="statusMessage" class="status">✓ Sent! The driver has received your destination.</div>
+</div>
+
+<script>
+  // YOUR PUSHOVER KEYS (Replace with your exact strings from Step 1)
+  const PUSHOVER_USER_KEY = "YOUR_PUSHOVER_USER_KEY";
+  const PUSHOVER_API_TOKEN = "YOUR_PUSHOVER_API_TOKEN";
+
+  function sendToDriver() {
+    const address = document.getElementById('addressInput').value.trim();
+    if (!address) {
+      alert("Please enter an address first.");
+      return;
+    }
+
+    // Encodes destination into standard Google Maps launch URL
+    const mapUrl = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(address);
+
+    // Sends notification directly to Pushover app
+    const formData = new FormData();
+    formData.append("token", PUSHOVER_API_TOKEN);
+    formData.append("user", PUSHOVER_USER_KEY);
+    formData.append("title", "📍 New Passenger Destination");
+    formData.append("message", address);
+    formData.append("url", mapUrl);
+    formData.append("url_title", "Tap to Start Navigation");
+    formData.append("sound", "chime");
+
+    fetch("https://api.pushover.net/1/messages.json", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => {
+      if (response.ok) {
+        document.getElementById('statusMessage').style.display = 'block';
+        document.getElementById('addressInput').value = '';
+      } else {
+        alert("Failed to send address. Please notify the driver.");
+      }
+    })
+    .catch(() => alert("Network error. Please try again."));
+  }
+</script>
+
+</body>
+</html>
